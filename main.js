@@ -50,8 +50,52 @@ function func(event){
    }
   }
 
+Array.prototype.indexOf=function(val){
+  for(var i=0;i<this.length;i++){
+    if(this[i]==val)
+    return i;
+  }
+  return -1;
+}
+
+Array.prototype.remove=function(val){
+  var index=this.indexOf(val);
+  if(index>-1){
+    this.splice(index,1);
+  }
+}
+
+function RM(content){
+  let pre=current.lastIndexOf("\/");
+  let list=current.substring(pre+1);
+  let get=localStorage.getItem(content);
+  get=JSON.parse(get);
+  if(get.type){
+    let l=localStorage.getItem(list);
+    l=JSON.parse(l);
+    l.filename.remove(content);
+    myStorage.set(list,l);
+  }
+  else{
+    if((get.catalog)){
+      for(let n=0;n<get.catalog.length;n++){
+        RM(get.catalog[n]);
+        localStorage.removeItem(get.catalog[n]);
+      }
+    let l=localStorage.getItem(list);
+    l=JSON.parse(l);
+    l.catalog.remove(content);
+    myStorage.set(list,l);
+    }
+    for(let i=0;i<get.filename.length;i++){
+      localStorage.removeItem(get.filename[i]);
+    }
+  }
+  localStorage.removeItem(content);
+}
+
 function getValue(){
-  var inputValue=document.getElementById("input-text"+count).value;
+  inputValue=document.getElementById("input-text"+count).value;
   switch(inputValue){
     case '':Space();break;
     case 'help':Help();Space();break;
@@ -235,7 +279,7 @@ function getValue(){
     let after=inputValue.match(/cat\u0020(.*)/)[1];
     let get=localStorage.getItem(after);
     get=JSON.parse(get);
-    /*有问题*/                                             /* !!!!!*/
+    /*！！！！！*/
     if((get.type)=='softlink'){
       let name=get.data_block;
       let n=localStorage.getItem(name);
@@ -259,7 +303,9 @@ function getValue(){
     let list=current.substring(pre+1);
     let r=/\-r/;
     if(r.test(after)){
-       
+       let t=after.lastIndexOf(' ');
+       let f=after.substring(t+1);
+       RM(f);
     }
     else{
       let get=localStorage.getItem(list);
