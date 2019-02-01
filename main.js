@@ -7,6 +7,7 @@ var echo=0;
 var cat=0;
 var rm=0;
 var ln=0;
+var cp=0;
 var ino;
 var current='~'
 
@@ -73,6 +74,8 @@ function getValue(){
         inode:ino,
         filename:new Array(),
         catalog:new Array(),
+        date:new Date().toLocaleString(),
+        authority:'drwxrwxr-x'
       };
       myStorage.set(after,obj);
     Space();
@@ -112,7 +115,9 @@ function getValue(){
       inode:ino,
       link:0,
       data_block:null,
-      type:'file'
+      type:'file',
+      date:new Date().toLocaleString(),
+      authority:'-rw-rw-r--'
     };
     var folder=localStorage.getItem(list);
     folder=JSON.parse(folder);
@@ -128,10 +133,36 @@ function getValue(){
     var after=inputValue.match(/ls\u0020(.*)/)[1];
     if(after=='-a'){
       let Div=document.createElement("div");
-      Div.innerHTML='<span class="usr">.'+'   '+'<span class="usr">..';
+      Div.innerHTML='<span class="usr">.'+'   '+'..</span>';
       document.body.appendChild(Div);
       Ls();
     }
+    if(after=='-l'){
+      let pre=current.lastIndexOf("\/");
+      let list=current.substring(pre+1);
+      let file=localStorage.getItem(list);
+      file=JSON.parse(file);
+      let files=file.filename;
+      let content=file.catalog;
+      if(content){
+        for(let i=0;i<content.length;i++){
+          let s=localStorage.getItem(content[i]);
+          s=JSON.parse(s);
+          let Div=document.createElement('div');
+          let length=s.catalog.length+s.filename.length;
+          Div.innerHTML=s.authority+' '+length+' li li '+s.date+' <span class="usr">'+content[i]+'</span>';
+          document.body.appendChild(Div);
+        }
+      }
+      for(let n=0;n<files.length;n++){
+        let d=localStorage.getItem(files[n]);
+        d=JSON.parse(d);
+        let div=document.createElement('div');
+        div.innerHTML=d.authority+' 1 li li '+d.date+' '+files[n];
+        document.body.appendChild(div);
+      }
+    }
+    Space();
   }
 
   if(echo==1){
@@ -204,6 +235,7 @@ function getValue(){
     let after=inputValue.match(/cat\u0020(.*)/)[1];
     let get=localStorage.getItem(after);
     get=JSON.parse(get);
+    /*有问题*/                                             /* !!!!!*/
     if((get.type)=='softlink'){
       let name=get.data_block;
       let n=localStorage.getItem(name);
@@ -227,15 +259,7 @@ function getValue(){
     let list=current.substring(pre+1);
     let r=/\-r/;
     if(r.test(after)){
-       let t=after.lastIndexOf(' ');
-       let f=after.substring(t+1);
-       let get=localStorage.getItem(list);
-       get=JSON.parse(get);                    /*weiwan*/
-       let q=get.catalog.indexOf(f);
-       get.catalog.splice(q,1);
-       myStorage.set(list,get);
-       let g=localStorage.getItem(f);
-       g=JSON.parse(g);
+       
     }
     else{
       let get=localStorage.getItem(list);
@@ -304,6 +328,47 @@ function getValue(){
     }
     Space();
   }
+  if(cp==1){
+    cp=0;
+    let after=inputValue.match(/cp\u0020(.*)/)[1];
+    let last=(function(){
+      let x=after.lastIndexOf(' ');
+      return x;
+    })();
+    let second=(function(){
+      let x=after.lastIndexOf(' ',last-1);
+      return x;
+    })();
+    let a=after.substring(second+1,last);
+    let b=after.substring(last+1);
+    let t=/\//;
+    if(!(t.test(b))){
+      let get=localStorage.getItem(a);
+      get=JSON.parse(get);
+      let getter=localStorage.getItem(b);
+      getter=JSON.parse(getter);
+      getter.data_block=get.data_block;
+      myStorage.set(b,getter);
+    }
+    else{
+      b=b.substring(0,b.length-1);
+      let getter=localStorage.getItem(a);
+      getter=JSON.parse(getter);
+      ino=getInode()+1;
+      myStorage.set("INODE",ino);
+      let data={};
+      data.inode=ino;
+      data.link=0;
+      data_block=a.data_block;
+      data.type='file';
+      let get=localStorage.getItem(b);
+      get=JSON.parse(get);
+      get.filename.push(a+'/'+data.inode+' ');
+      myStorage.set(a+'/'+data.inode,data,data+' ');
+      myStorage.set(b,get);
+    }
+    Space();
+  }
 }
 
 function getValue_pre(){
@@ -317,6 +382,7 @@ function getValue_pre(){
     case 'cat':cat=1;break;
     case 'rm':rm=1;break;
     case 'ln':ln=1;break;
+    case 'cp':cp=1;break;
   }
 }
 
@@ -335,13 +401,23 @@ function Help(){
   document.body.appendChild(tip);
 }
 
-function Ls(){
+function Ls(){   
   var pre=current.lastIndexOf("\/");
   var list=current.substring(pre+1);
   var file=localStorage.getItem(list);
   file=JSON.parse(file);
   var files=file.filename;
   var content=file.catalog;
+  var t=/\//g;
+  if((t.test(files))){
+    let file=files.join(',');
+    console.log(file);
+    let f=file.replace(/\/(.+?)\,/g,',');
+    f=f.replace(/\/(.+?)\ /,'');
+    let name=f.split(',');
+    console.log(name);
+    files=name;
+  }
   var Div=document.createElement("div");
   Div.innerHTML=files;
   document.body.appendChild(Div);
