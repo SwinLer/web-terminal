@@ -9,7 +9,9 @@ var rm=0;
 var ln=0;
 var cp=0;
 var ino;
-var current='~'
+var current='~';
+var CAT;
+var out=0;
 
 window.onload=function(){
   var check=getInode();
@@ -205,8 +207,8 @@ function getValue(){
         div.innerHTML=d.authority+' 1 li li '+d.date+' '+files[n];
         document.body.appendChild(div);
       }
+      Space();
     }
-    Space();
   }
 
   if(echo==1){
@@ -215,7 +217,9 @@ function getValue(){
     let markd=/\"/;
     let marks=/\'/;
     let files=/\u0020\>\u0020/;
+    let file=/\u0020\>\>\u0020/;
     let infile=files.test(after);
+    let infiles=file.test(after);
     let testd=markd.test(after);
     let tests=marks.test(after);
     if(testd||tests){
@@ -230,11 +234,25 @@ function getValue(){
         })();
         let a=after.substring(1,second-1);
         let b=after.substring(last+1);
-        console.log(a);
-        console.log(b);
         let text=localStorage.getItem(b);
         text=JSON.parse(text);
         text.data_block=a;
+        myStorage.set(b,text);
+      }
+      else if(infiles){
+        let last=(function(){
+          let x=after.lastIndexOf(' ');
+          return x;
+        })();
+        let second=(function(){
+          let x=after.lastIndexOf(' ',last-1);
+          return x;
+        })();
+        let a=after.substring(1,second-1);
+        let b=after.substring(last+1);
+        let text=localStorage.getItem(b);
+        text=JSON.parse(text);
+        text.data_block=teaxt.data_block+a;
         myStorage.set(b,text);
       }
       else{
@@ -266,6 +284,22 @@ function getValue(){
         text.data_block=a;
         myStorage.set(b,text);
       }
+      else if(infiles){
+        let last=(function(){
+          let x=after.lastIndexOf(' ');
+          return x;
+        })();
+        let second=(function(){
+          let x=after.lastIndexOf(' ',last-1);
+          return x;
+        })();
+        let a=after.substring(0,second);
+        let b=after.substring(last+1);
+        let text=localStorage.getItem(b);
+        text=JSON.parse(text);
+        text.data_block=text.data_block+a;
+        myStorage.set(b,text);
+      }
       else{
         let Div=document.createElement("div");
         Div.innerHTML=after;
@@ -277,24 +311,91 @@ function getValue(){
   if(cat==1){
     cat=0;
     let after=inputValue.match(/cat\u0020(.*)/)[1];
-    let get=localStorage.getItem(after);
-    get=JSON.parse(get);
-    /*！！！！！*/
-    if((get.type)=='softlink'){
-      let name=get.data_block;
-      let n=localStorage.getItem(name);
-      n=JSON.parse(n);
-      console.log(n);
-      let Div=document.createElement("div");
-      Div.innerHTML=n.data_block;
-      document.body.appendChild(Div);
+    let n=/\<\u0020/;
+    let m=/\<\<\u0020/;
+    let files=/\>\u0020/;
+    let file=/\>\>\u0020/;
+    if((n.test(after))||(m.test(after))||(file.test(after))||(files.test(after))){
+      let last=(function(){
+        let x=after.lastIndexOf(' ');
+        return x;
+      })();
+      b=after.substring(last+1);                       //!!!!!!
+      if(n.test(after)){
+        if(m.test(after)){                           //重定向输入
+          CAT=0;
+          content=new Array();
+          Stdin();
+        }
+        else{
+          let get=localStorage.getItem(b);
+          get=JSON.parse(get);
+          let Div=document.createElement("div");
+          Div.innerHTML=get.data_block;
+          document.body.appendChild(Div);
+        }                       
+      }
+      else if(files.test(after)){                   //重定向输出覆盖新内容'>'
+        if(file.test(after)){                    //重定向输出追加新内容'>>'
+        let last=(function(){
+          let x=after.lastIndexOf(' ');
+          return x;
+        })();
+        let second=(function(){
+          let x=after.lastIndexOf(' ',last-1);
+          return x;
+        })();
+        let a=after.substring(1,second-1);
+        let b=after.substring(last+1);
+        let A=localStorage.getItem(a);
+        let B=localStorage.getItem(b);
+        A=JSON.parse(A);
+        B=JSON.parse(B);
+        B.data_block=A.data_block+B.data_block;
+        myStorage.set(b,B);
+        Space();
+        }
+        else{
+          let last=(function(){
+            let x=after.lastIndexOf(' ');
+            return x;
+          })();
+          let second=(function(){
+            let x=after.lastIndexOf(' ',last-1);
+            return x;
+          })();
+          let a=after.substring(second+1,last);
+          b=after.substring(last+1);
+          if(a=='>'){
+            let div=document.createElement('div');
+            div.innerHTML='<input id="stdout-text'+out+'" class="text" type="text" onkeypress="getStdoutValue(event)" >';
+            document.body.appendChild(div);
+            let pos=div.lastChild;
+            pos.focus();
+          }
+        }
+      }
     }
     else{
-      let Div=document.createElement("div");
-      Div.innerHTML=get.data_block;
-      document.body.appendChild(Div);
-    }
+      /*！！！！！*/
+      let get=localStorage.getItem(after);
+      get=JSON.parse(get);
+      if((get.type)=='softlink'){
+        let name=get.data_block;
+        let n=localStorage.getItem(name);
+        n=JSON.parse(n);
+        console.log(n);
+        let Div=document.createElement("div");
+        Div.innerHTML=n.data_block;
+        document.body.appendChild(Div);
+      }
+      else{
+        let Div=document.createElement("div");
+        Div.innerHTML=get.data_block;
+        document.body.appendChild(Div);
+      }
     Space();
+    }
   }
   if(rm==1){
     rm=0;
@@ -473,3 +574,64 @@ function Ls(){
   Space();
 }
 
+function getStdinValue(event,end){
+  var code=event.keyCode;
+  if(code==13){
+    var stdinText=document.getElementById("stdin-text"+CAT).value;
+    if(!(stdinText==end)){
+      content.push(stdinText);
+      Stdin();
+    }
+    else{
+      for(let i=0;i<content.length;i++){
+        let div=document.createElement('div');
+        div.innerHTML=content[i];
+        document.body.appendChild(div);
+      }
+      Space();
+    }
+  }
+}
+
+function Stdin(){
+  CAT++;
+  let div=document.createElement('div');
+  div.innerHTML='> '+'<input id="stdin-text'+CAT+'" class="text" type="text" onkeypress="getStdinValue(event,b)" >';
+  document.body.appendChild(div);
+  let pos=div.lastChild;
+  pos.focus();
+}
+
+function getStdoutValue(event){
+  let code=event.keyCode;
+  if(code==13){
+    let stdoutText=document.getElementById('stdout-text'+out).value;
+    let text=localStorage.getItem(b);
+    if(text!=null){
+      text=JSON.parse(text);
+      text.data_block=stdoutText;
+      myStorage.set(b,text);
+    }
+    else{
+    let pre=current.lastIndexOf("\/");
+    let list=current.substring(pre+1);
+    ino=getInode()+1;
+    myStorage.set("INODE",ino);
+    let data={
+      inode:ino,
+      link:0,
+      data_block:stdoutText,
+      type:'file',
+      date:new Date().toLocaleString(),
+      authority:'-rw-rw-r--'
+    };
+    let folder=localStorage.getItem(list);
+    folder=JSON.parse(folder);
+    folder.filename.push(b);
+    myStorage.set(list,folder);
+    myStorage.set(b,data);
+    }
+    Space();
+    out++;
+  }
+}
